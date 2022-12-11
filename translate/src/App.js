@@ -29,6 +29,12 @@ function App() {
                 })
               setLanguages(languagesList);
             })
+    
+    let requests = sessionStorage.getItem("requests")
+    if (parseInt(requests)>30)
+    {
+      setoutputText("You cannot make any requests right now as you have already made 10 requests repeatedly. Please try again after 30 minutes")
+    }        
   }, [])
 
   function encodeQuery()
@@ -47,30 +53,56 @@ function App() {
   }
 
   const getTranslatedText = async () =>{
-    setLoaderStatus(true);
-      let query = encodeQuery()
-    query =  `http://165.22.191.215:3000/translate?`+ query;
 
-    fetch(query,{  
-        method: 'GET'
-    })
-    .then(async response => {
-        const data = await response.json();
+    let requests = sessionStorage.getItem("requests")
+    if (requests == null || requests == undefined || parseInt(requests) < 30)
+    {
+        setLoaderStatus(true);
+        let query = encodeQuery()
+      query =  `http://165.22.191.215:3000/translate?`+ query;
 
-        // check for error response
-        if (!response.ok) {
-            // get error message from body or default to response statusText
-            const error = (data && data.message) || response.statusText;
-            return Promise.reject(error);
-        }
-        setLoaderStatus(false);
-        setoutputText(data.text)    
-    })
-    .catch(error => {
-      // let errorObj = error.json();
-      setoutputText(error);
-      setLoaderStatus(false)
-    });
+      fetch(query,{  
+          method: 'GET'
+      })
+      .then(async response => {
+          const data = await response.json();
+
+          // check for error response
+          
+          if (!response.ok) {
+              debugger;
+              // get error message from body or default to response statusText
+              const error = (data.name);
+              return Promise.reject(error);
+          }
+          
+          setLoaderStatus(false);
+          setoutputText(data.text)    
+      })
+      .catch(error => {
+        console.log(error.name);
+        
+        setoutputText(error);
+        setLoaderStatus(false)
+      }).finally(res=>{
+        console.log(res);
+      });
+
+      //set requests count in the browser
+      if (requests == null || requests == NaN)
+      {
+        sessionStorage.setItem("requests", String(parseInt(1)));
+      }
+      else
+      {
+        sessionStorage.setItem("requests", String(parseInt(requests)+1));
+      }
+      
+    }
+    else
+    {
+      setoutputText("Error: You have reached maximum requests. Please try again after 30 minutes");
+    }
   }
 
   return (
